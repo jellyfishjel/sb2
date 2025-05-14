@@ -1,50 +1,31 @@
-
-import streamlit as st
-import pandas as pd
 import plotly.express as px
+import pandas as pd
 
-st.set_page_config(page_title="Sunburst mở rẽ nhánh", layout="centered")
-st.title("📊 Sunburst Chart: Field → Internship → Projects (phân nhánh rõ)")
-
-# Đọc file Excel
+# Đọc dữ liệu
 df = pd.read_excel("education_career_success.xlsx")
 
-# Nhóm số lần thực tập
-df["Internship_Band"] = pd.cut(
-    df["Internships_Completed"],
-    bins=[-1, 0, 1, 3, 10],
-    labels=["0", "1", "2–3", "4+"]
-)
+# Tính số lượng sinh viên cho từng nhánh
+grouped = df.groupby(["Field_of_Study", "Gender", "Current_Job_Level"])["Student_ID"].count().reset_index()
+grouped.columns = ["Field_of_Study", "Gender", "Current_Job_Level", "Count"]
 
-# Nhóm số dự án
-df["Project_Band"] = pd.cut(
-    df["Projects_Completed"],
-    bins=[-1, 0, 2, 5, 20],
-    labels=["0", "1–2", "3–5", "6+"]
-)
-
-# Nhóm dữ liệu để tính số sinh viên cho từng nhánh
-grouped = df.groupby(["Field_of_Study", "Internship_Band", "Project_Band"])["Student_ID"].count().reset_index()
-grouped.columns = ["Field_of_Study", "Internship_Band", "Project_Band", "Count"]
-
-# Tạo biểu đồ sunburst
+# Tạo sunburst giống như chart cuối cùng bên phải
 fig = px.sunburst(
     grouped,
-    path=["Field_of_Study", "Internship_Band", "Project_Band"],
+    path=["Field_of_Study", "Gender", "Current_Job_Level"],
     values="Count",
-    title="Field → Internships → Projects (rẽ nhánh rõ)"
+    branchvalues="total",     # Quan trọng để nhánh không khép lại như pie chart
+    maxdepth=-1               # Cho phép hiển thị tất cả các cấp
 )
 
 fig.update_traces(
     insidetextorientation='radial',
-    root_color="white",
-    sort=False
+    sort=False,
+    marker=dict(line=dict(color='white', width=2))
 )
 
 fig.update_layout(
     margin=dict(t=10, l=10, r=10, b=10),
-    sunburstcolorway=["#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A"],
-    extendsunburstcolors=True
+    uniformtext=dict(minsize=10, mode='hide')
 )
 
-st.plotly_chart(fig, use_container_width=True)
+fig.show()
